@@ -1,2 +1,3 @@
-Flutter extension for [logger](https://github.com/leisim/logger).<br>
-Please go to there for documentation.
+Flutter extension for [logger](https://github.com/leisim/logger).
+
+Please see [example](example/lib/main.dart).

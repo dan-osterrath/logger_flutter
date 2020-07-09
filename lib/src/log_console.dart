@@ -1,7 +1,7 @@
 part of logger_flutter;
 
-ListQueue<OutputEvent> _outputEventBuffer = ListQueue();
-int _bufferSize = 20;
+final ListQueue<OutputEvent> _outputEventBuffer = ListQueue();
+final List<Function(Queue<OutputEvent>)> _outputEventBufferChangedHandlers = List();
 bool _initialized = false;
 
 class LogConsole extends StatefulWidget {
@@ -11,16 +11,18 @@ class LogConsole extends StatefulWidget {
   LogConsole({this.dark = false, this.showCloseButton = false})
       : assert(_initialized, "Please call LogConsole.init() first.");
 
-  static void init({int bufferSize = 20}) {
+  static void init({int bufferSize = 20, LogConsoleOutput logConsoleOutput}) {
     if (_initialized) return;
 
-    _bufferSize = bufferSize;
     _initialized = true;
-    Logger.addOutputListener((e) {
+    logConsoleOutput.stream.listen((e) {
       if (_outputEventBuffer.length == bufferSize) {
         _outputEventBuffer.removeFirst();
       }
       _outputEventBuffer.add(e);
+      _outputEventBufferChangedHandlers.forEach((element) {
+        element.call(_outputEventBuffer);
+      });
     });
   }
 
@@ -38,8 +40,6 @@ class RenderedEvent {
 }
 
 class _LogConsoleState extends State<LogConsole> {
-  OutputCallback _callback;
-
   ListQueue<RenderedEvent> _renderedBuffer = ListQueue();
   List<RenderedEvent> _filteredBuffer = [];
 
@@ -57,21 +57,11 @@ class _LogConsoleState extends State<LogConsole> {
   void initState() {
     super.initState();
 
-    _callback = (e) {
-      if (_renderedBuffer.length == _bufferSize) {
-        _renderedBuffer.removeFirst();
-      }
-
-      _renderedBuffer.add(_renderEvent(e));
-      _refreshFilter();
-    };
-
-    Logger.addOutputListener(_callback);
+    _outputEventBufferChangedHandlers.add(_onOutputEventsChanged);
 
     _scrollController.addListener(() {
       if (!_scrollListenerEnabled) return;
-      var scrolledToBottom = _scrollController.offset >=
-          _scrollController.position.maxScrollExtent;
+      var scrolledToBottom = _scrollController.offset >= _scrollController.position.maxScrollExtent;
       setState(() {
         _followBottom = scrolledToBottom;
       });
@@ -82,10 +72,14 @@ class _LogConsoleState extends State<LogConsole> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    _onOutputEventsChanged(_outputEventBuffer);
+  }
+
+  void _onOutputEventsChanged(Queue<OutputEvent> events) {
     _renderedBuffer.clear();
-    for (var event in _outputEventBuffer) {
-      _renderedBuffer.add(_renderEvent(event));
-    }
+    events.forEach((element) {
+      _renderedBuffer.add(_renderEvent(element));
+    });
     _refreshFilter();
   }
 
@@ -310,7 +304,7 @@ class _LogConsoleState extends State<LogConsole> {
 
   @override
   void dispose() {
-    Logger.removeOutputListener(_callback);
+    _outputEventBufferChangedHandlers.remove(_onOutputEventsChanged);
     super.dispose();
   }
 }

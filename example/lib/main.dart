@@ -1,20 +1,26 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:logger_flutter/logger_flutter.dart';
 
 void main() {
+  LogConsole.init(logConsoleOutput: logConsoleOutput);
+
   runApp(MyApp());
   log();
 }
 
+var logConsoleOutput = LogConsoleOutput(wrapped: ConsoleOutput());
+
 var logger = Logger(
   printer: PrettyPrinter(),
+  output: logConsoleOutput,
 );
 
 var loggerNoStack = Logger(
   printer: PrettyPrinter(methodCount: 0),
+  output: logConsoleOutput,
 );
 
 void log() {
