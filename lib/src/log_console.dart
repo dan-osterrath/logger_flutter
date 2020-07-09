@@ -3,6 +3,7 @@ part of logger_flutter;
 final ListQueue<OutputEvent> _outputEventBuffer = ListQueue();
 final List<Function(Queue<OutputEvent>)> _outputEventBufferChangedHandlers = List();
 bool _initialized = false;
+StreamSubscription<OutputEvent> _outputEventStreamSubscription;
 
 class LogConsole extends StatefulWidget {
   final bool dark;
@@ -15,7 +16,7 @@ class LogConsole extends StatefulWidget {
     if (_initialized) return;
 
     _initialized = true;
-    logConsoleOutput.stream.listen((e) {
+    _outputEventStreamSubscription = logConsoleOutput.stream.listen((e) {
       if (_outputEventBuffer.length == bufferSize) {
         _outputEventBuffer.removeFirst();
       }
@@ -24,6 +25,14 @@ class LogConsole extends StatefulWidget {
         element.call(_outputEventBuffer);
       });
     });
+  }
+
+  static void dispose() {
+    if (!_initialized) return;
+
+    _initialized = false;
+    _outputEventStreamSubscription?.cancel();
+    _outputEventStreamSubscription = null;
   }
 
   @override
