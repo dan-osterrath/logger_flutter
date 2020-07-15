@@ -4,11 +4,19 @@ class LogConsoleOnShake extends StatefulWidget {
   final Widget child;
   final bool dark;
   final bool debugOnly;
+  final double shakeThresholdGravity;
+  final int minTimeBetweenShakes;
+  final int shakeCountResetTime;
+  final int minShakeCount;
 
   LogConsoleOnShake({
     @required this.child,
     this.dark,
     this.debugOnly = true,
+    this.shakeThresholdGravity = 1.25,
+    this.minTimeBetweenShakes = 160,
+    this.shakeCountResetTime = 1500,
+    this.minShakeCount = 2,
   });
 
   @override
@@ -39,7 +47,13 @@ class _LogConsoleOnShakeState extends State<LogConsoleOnShake> {
   }
 
   _init() {
-    _detector = ShakeDetector(onPhoneShake: _openLogConsole);
+    _detector = ShakeDetector(
+      onPhoneShake: _openLogConsole,
+      shakeThresholdGravity: widget.shakeThresholdGravity,
+      minTimeBetweenShakes: widget.minTimeBetweenShakes,
+      shakeCountResetTime: widget.shakeCountResetTime,
+      minShakeCount: widget.minShakeCount,
+    );
     _detector.startListening();
   }
 
